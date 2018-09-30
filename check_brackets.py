@@ -100,29 +100,55 @@ class CustomLinkedList:
     def empty(self):
         return self._size == 0
 
-    def print(self):
-        res = []
-        target = self._head
-        while target:
-            res.append(target.value)
-            target = target.nxt
-        print('LIST({}) IS: '.format(self._size), *res)
+class CustomStack:
 
-# def test():
-#     lst = CustomLinkedList()
-#     lst.append(21)
-#     lst.append(22, 0)
-#     lst.unshift(16)
-#     assert lst.remove() == 22
-#     assert lst.shift() == 16
-#     lst.append(30)
-#     lst.append(41, 0)
-#     assert lst.shift() == 21
-#     assert lst.shift() == 41
-#     assert lst.remove() == 30
+    def __init__(self):
+        self.linked_list = CustomLinkedList()
+    
+    def push(self, element):
+        self.linked_list.unshift(element)
 
-# test()
+    def pop(self):
+        return self.linked_list.shift()
 
+    def top(self):
+        return self.linked_list.head()
 
+    def size(self):
+        return self.linked_list._size()
 
+    def empty(self):
+        return self.linked_list.empty()
 
+def check_brackets(string):
+    stack = CustomStack()
+    count = 0
+    for char in string:
+        count += 1
+        if char in {'(', '[', '{'}:
+            stack.push((char, count))
+        elif char in {')', ']', '}'}:
+            if not stack.empty():
+                top, c = stack.top()
+                if (char == ')' and top == '(') or \
+                    (char == ']' and top == '[') or \
+                    (char == '}' and top == '{'):
+                    stack.pop()
+                else:
+                    return count
+            else:
+                    return count
+        else:
+            continue
+    return 'Success' if stack.empty() else stack.pop()[1]
+
+def main():
+    brackets = input()
+    print(check_brackets(brackets))
+
+def test():
+    assert check_brackets('([](){([])})') == 'Success'
+    assert check_brackets('()[]}') == 5
+    assert check_brackets('{{[()]]') == 7
+
+main()
