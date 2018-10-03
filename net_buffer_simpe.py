@@ -191,18 +191,36 @@ class Processor:
 
 
 def net_buffer(packets, buf_size):
-    proc = Processor(buf_size, len(packets))
+    buffer = CustomQueue()
+    handled = [i for i in range(0, len(packets))]
+    time_log = 0
     for packet in packets:
-        _id, raw_packet = packet
-        arrived, duration = raw_packet
-        while proc.real_time  < arrived:
-            proc.real_time += 1
-            proc.tick()
-        proc.real_time = arrived
-        proc.on_packet_arrived(packet)
-    if not proc.buffer.empty():
-        proc.work()
-    return proc.handled
+        print("Handle: ", packet)
+        num, arrived, duration = packet
+        time_diff = arrived - time_log
+        while time_diff > 0:
+            if buffer.head():
+                current_packet = buffer.head()
+                if current_packet[2] > time_diff:
+                    current_packet[2] -= time_diff
+                    time_log += time_diff
+                    time_diff = 0
+                elif current_packet[2] < time_diff:
+                    time_diff = time_diff - current_packet[1]
+                    time_log += time_diff
+                else:
+                    time_log += time_diff
+                    time_diff = 0
+                if current_packet[2] == 0:
+                    buffer.dequeue()
+                    handled[num] = str(time_log)
+            else:
+                break
+        if buffer.size() >= buf_size:
+            handled[num] = str(-1)
+        else:
+            buffer.enqueue(packet)
+    return handled
         
 
 
@@ -211,11 +229,11 @@ def main():
     packets = []
     i = 0
     while i < n_packets:
-        packet = list(map(int, input().split(' ')))
-        packets.append((i, packet))
+        packets.append([i, *list(map(int, input().split(' ')))])
         i += 1
     result = net_buffer(packets, buf_size)
-    print('\n'.join(result))
+    for r in result:
+        print(r)
 
 # def test():
 #     assert numpy.array_equal(net_buffer([(0, 0)], 1), [0])
