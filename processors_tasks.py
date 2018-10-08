@@ -4,33 +4,26 @@ from collections import deque
 
 def spread_to_procs(tasks, n_procs):
     time = 0
-    tasks_in_progress = []
-    free_processors = [[i, 0] for i in range(0, n_procs)]
-    busy_processors = deque([])
-    heapq.heapify(free_processors)
-    for index, task in enumerate(tasks):
-        # print('Handling task num={}, dur={}'.format(index, task))
-        # print('Fre procs is {}, busy procs={},  tasks={}'.format(free_processors, busy_processors, tasks_in_progress))
-        if not free_processors:
-            next_proc_need = busy_processors[-1][1]  # heapq.heappop(tasks_in_progress)
-            # print('Task to remote time = {}'.format(next_proc_need))
-            elapsed = 0
-            while busy_processors and busy_processors[-1][1] <= next_proc_need:
-                proc = busy_processors.pop()
-                elapsed = proc[1]
-                proc[1] = 0
-                heapq.heappush(free_processors, proc)
-            for proc in busy_processors:
-                proc[1] -= elapsed
-            time += elapsed
-        if task == 0:
-            print(free_processors[0][0], time)
+    processors = [[0, i] for i in range(0, n_procs)]
+    heapq.heapify(processors)
+    for task in tasks:
+        if processors[0][0] > time:
+            next_proc = heapq.heappop(processors)
+            wiil_be_free_at = next_proc[0]
+            print(next_proc[1], wiil_be_free_at)
+            next_proc[0] = wiil_be_free_at + task
+            heapq.heappush(processors, next_proc)
+            time = wiil_be_free_at
         else:
-            proc = heapq.heappop(free_processors)
-            print(proc[0], time)
-            heapq.heappush(tasks_in_progress, task)
-            proc[1] = task
-            busy_processors.appendleft(proc)
+            if task == 0:
+                print(processors[0][1], time)
+            else:
+                proc = heapq.heappop(processors)
+                free_at = proc[0]
+                print(proc[1], proc[0])
+                proc[0] = time + task
+                heapq.heappush(processors, proc)
+                time = free_at
 
 
 def main():
@@ -38,4 +31,7 @@ def main():
     tasks_durations = list(map(int, input().split(' ')))
     spread_to_procs(tasks_durations, n_procs)
 
-main()
+try:
+    main()
+except Exception as e:
+    print(e)
