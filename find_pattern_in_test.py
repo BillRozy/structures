@@ -9,12 +9,11 @@ class HashSet:
     @staticmethod
     @lru_cache(maxsize=500000)
     def pow_x_p(order):
-        return pow(HashSet.x, order)
+        return pow(HashSet.x, order, HashSet.p)
 
     @staticmethod
     def calc_ord(char, order):
-        res = (ord(char) * HashSet.pow_x_p(order))
-        print('hashing', char, order, ' res = ', res)
+        res = (HashSet.pow_x_p(order) * ord(char) % HashSet.p) % HashSet.p
         return res
 
     @staticmethod
@@ -22,44 +21,34 @@ class HashSet:
         m = len(string)
         res_num = 0
         for i, char in enumerate(string):
-            res_num += HashSet.calc_ord(char, m - i - 1)
-        print('hashed str=', string, 'to ', res_num)
+            res_num = (res_num % HashSet.p + HashSet.calc_ord(char, i) % HashSet.p) % HashSet.p
         return res_num
 
 
-def alg_rabin_carp(pattern, text):
-    appearances = deque([])
+def Rabin_Karp_Matcher(text, pattern):
+    n = len(text)
     m = len(pattern)
-    alg_dur = len(text) - m
-    hashes = [float('inf')] * (alg_dur + 1)
-    xp = pow(HashSet.x, m - 1)
-    h_pattern = HashSet.hash(pattern)
-    has_prev_symb = False
-    for i in range(0, alg_dur + 1, 1):
-        current_text_part = text[i:i + m]
-        if has_prev_symb:
-            curhash = hashes[i - 1]
-            added_symb = ord(text[i + m - 1])
-            prev_symb = HashSet.calc_ord(text[i - 1], m - 1)
-            curhash = curhash - prev_symb
-            print('curhash', curhash)
-            print('Prev symbol={}, addedsymb={}, prevhash={}'.format(prev_symb, added_symb, hashes[i - 1]))
-            print('Print correction from pattern={} to pattern={}, thrown={}, added={}'.format(text[i-1:i + m - 1], current_text_part, text[i - 1], text[i + m - 1]))
-            hashes[i] = ((curhash * HashSet.x) + added_symb)
-                         
+    hashes_count = n - m + 1
+    pattern_hash = HashSet.hash(pattern)
+    hashes = [float('inf')] * hashes_count
+    result = deque([])
+    for s in range(hashes_count - 1, -1, -1):
+        if s == hashes_count - 1:
+            hashes[s] = HashSet.hash(text[s: s + m])
         else:
-            hashes[i] = HashSet.hash(current_text_part)
-            has_prev_symb = True 
-        if hashes[i] == h_pattern:
-            if pattern == current_text_part:
-                appearances.append(i)
-    print(hashes)
-    return appearances
+            effect_of_removed_letter = HashSet.calc_ord(text[s + m], m - 1)
+            hashes[s] = ((hashes[s + 1] % HashSet.p - effect_of_removed_letter % HashSet.p) * HashSet.x) % HashSet.p
+            effect_of_added_letter = HashSet.calc_ord(text[s], 0)
+            hashes[s] = (hashes[s] % HashSet.p + effect_of_added_letter % HashSet.p) % HashSet.p
+        if pattern_hash == hashes[s]: 
+            if pattern == text[s: s + m]:
+                result.appendleft(s)
+    return result
 
 
 def main():
     pattern = input()
     text = input()
-    print(*alg_rabin_carp(pattern, text))
+    print(*Rabin_Karp_Matcher(text, pattern))
 
 main()
